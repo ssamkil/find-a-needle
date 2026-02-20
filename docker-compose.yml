@@ -1,0 +1,54 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - node-app
+      - python-app
+
+  redis:
+    image: redis:alpine
+    container_name: redis-server
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+
+  node-app:
+    build:
+      context: ./node-app
+      dockerfile: Dockerfile
+    container_name: node-server
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  python-app:
+    build:
+      - context: ./python-app
+      - dockerfile: Dockerfile
+    container_name: python-worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  redis_data:
