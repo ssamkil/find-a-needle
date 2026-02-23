@@ -5,3 +5,4 @@ apscheduler
 sqlalchemy[asyncio]>=2.0.0
 asyncpg
 sentry-sdk[fastapi]
+python-dotenv

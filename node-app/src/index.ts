@@ -2,6 +2,7 @@ import express from 'express';
 import { createClient } from 'redis';
 
 const app = express();
+app.use(express.json());
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const client = createClient({ url: REDIS_URL });
 
@@ -13,24 +14,24 @@ async function run() {
 
     await client.set('event_stock', 1000);
 
-    app.get('/apply', async (req, res) => {
-        const userId = req.query.userId as string;
+    app.post('/apply', async (req, res) => {
+        const { userId } = req.body
 
         if (!userId) {
-            return res.status(400).send('userId needed');
+            return res.status(400).json({ status: 'fail', message: 'userId가 필요합니다'})
         }
 
         try {
-            const isNewUser = await client.sAdd('applied_users', userId);
+            const isNewUser = await client.sAdd('applied_users', String(userId));
 
             if (isNewUser === 0) {
-                return res.status(400).json({ status: 'fail', message: '이미 참여하셨습니다.' });
+                return res.status(400).json({ status: 'fail', message: '이미 참여하셨습니다' });
             }
 
             const remainStock = await client.decr('event_stock');
 
             if (remainStock < 0) {
-                return res.status(429).json({ status: 'fail', message: '선착순 마감되었습니다.' });
+                return res.status(429).json({ status: 'fail', message: '선착순 마감되었습니다' });
             }
 
             console.log(`[성공] 유저: ${userId}, 남은 재고: ${remainStock}`);
