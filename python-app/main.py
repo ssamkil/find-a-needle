@@ -11,7 +11,7 @@ from database import engine, Base, AsyncSessionLocal, Winner
 from sqlalchemy import select
 
 sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
+    dsn=os.getenv("SENTRY_DSN_PYTHON"),
     integrations=[FastApiIntegration()],
     traces_sample_rate=1.0,
 )
@@ -46,6 +46,7 @@ async def move_redis_to_db():
             print(f"성공: {len(winners_list)}명의 당첨자를 DB로 이전했습니다.")
         except Exception as e:
             print(f"에러 발생: {e}")
+            sentry_sdk.capture_exception(e)
             await session.rollback()
 
 

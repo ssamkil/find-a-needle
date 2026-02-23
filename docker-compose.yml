@@ -27,6 +27,8 @@ services:
       context: ./node-app
       dockerfile: Dockerfile
     container_name: node-server
+    env_file:
+      - .env
     environment:
       - REDIS_URL=redis://redis:6379
     depends_on:
@@ -58,6 +60,8 @@ services:
       context: ./python-app
       dockerfile: Dockerfile
     container_name: python-worker
+    env_file:
+      - .env
     environment:
       - REDIS_URL=redis://redis:6379
       - DB_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}

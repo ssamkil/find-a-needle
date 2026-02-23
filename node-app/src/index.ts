@@ -1,7 +1,18 @@
+import 'dotenv/config';
 import express from 'express';
 import { createClient } from 'redis';
+import * as Sentry from '@sentry/node';
 
 const app = express();
+
+Sentry.init({
+    dsn: process.env.SENTRY_DSN_NODE,
+    tracesSampleRate: 1.0,
+    debug: true
+});
+
+console.log("SENTRY DSN:", process.env.SENTRY_DSN_NODE);
+
 app.use(express.json());
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const client = createClient({ url: REDIS_URL });
@@ -14,7 +25,7 @@ async function run() {
 
     await client.set('event_stock', 1000);
 
-    app.post('/apply', async (req, res) => {
+    app.post('/apply', async (req, res, next) => {
         const { userId } = req.body
 
         if (!userId) {
@@ -43,9 +54,15 @@ async function run() {
 
         } catch (error) {
             console.error('에러 발생:', error);
-            res.status(500).send('서버 에러');
+            next(error);
         }
     });
+
+    app.get("/debug-sentry", (req, res) => {
+        throw new Error("sentry error test");
+    });
+
+    Sentry.setupExpressErrorHandler(app);
 
     app.listen(3000, () => {
         console.log('서버가 3000번 포트에서 실행 중');
