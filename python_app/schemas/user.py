@@ -13,6 +13,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, description="비밀번호는 최소 8자 이상이어야 합니다")
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class UserResponse(UserBase):
     id: int
     role: UserRole

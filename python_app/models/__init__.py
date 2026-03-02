@@ -2,4 +2,4 @@ from .user import User, UserRole
 from .event import Event, EventStatus
 from .winner import Winner
 from .notification import Notification
-from .lottery_history import LotteryHistory
+from .lottery_history import LotteryHistory, LotteryHistoryStatus
