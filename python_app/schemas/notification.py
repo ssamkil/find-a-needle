@@ -1,10 +1,13 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-class NotificationResponse(BaseModel):
+class NotificationBase(BaseModel):
+    title: str = Field(..., max_length=300)
+    content: str = Field(..., max_length=1500)
+
+class NotificationResponse(NotificationBase):
     id: int
-    title: str
-    content: str
+    user_id: int
     is_read: bool
     created_at: datetime
 

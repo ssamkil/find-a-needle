@@ -1,19 +1,22 @@
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from python_app.models.user import UserRole
+from enum import Enum
+
+class UserRole(str, Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., description="계정 이메일")
+    email: EmailStr = Field(..., max_length=300)
+    nickname: str = Field(..., min_length=2, max_length=50)
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, max_length=100, description="비밀번호 8자 이상")
-
-class UserLogin(UserBase):
-    password: str = Field(..., description="비밀번호")
+    password: str = Field(..., min_length=8, description="비밀번호는 최소 8자 이상이어야 합니다")
 
 class UserResponse(UserBase):
     id: int
     role: UserRole
+    is_active: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
