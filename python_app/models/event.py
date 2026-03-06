@@ -8,8 +8,9 @@ from python_app.db.session import Base
 class EventStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     OPEN = "OPEN"
-    CLOSED = "CLOSED"
+    PAUSED = "PAUSED"
     COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 class Event(Base):
     __tablename__ = "events"
@@ -17,7 +18,6 @@ class Event(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1500), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     max_applicants: Mapped[int] = mapped_column(default=10000)
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

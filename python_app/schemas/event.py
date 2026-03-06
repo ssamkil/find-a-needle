@@ -15,7 +15,6 @@ class EventCreate(EventBase):
 
 class EventResponse(EventBase):
     id: int
-    is_active: bool
     creator_id: int
     status: EventStatus
     created_at: datetime
