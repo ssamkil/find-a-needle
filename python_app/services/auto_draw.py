@@ -1,6 +1,5 @@
-import hashlib, json
+import hashlib, json, pytz
 from datetime import datetime, timezone
-from pytz import timezone
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from python_app.models import Event, EventStatus, Winner, LotteryHistory, LotteryHistoryStatus
@@ -32,16 +31,16 @@ async def perform_draw(event_id: int, db, executor_id: int):
     try:
         if winner_ids:
             values = [{"event_id": event_id, "user_id": int(uid)} for uid in winner_ids]
-            stmt = insert(Winner).values(values).on_conflict_do_nothing(
+            query = insert(Winner).values(values).on_conflict_do_nothing(
                 index_elements=["event_id", "user_id"]
             )
-            await db.execute(stmt)
+            await db.execute(query)
 
         db.add(LotteryHistory(
             event_id=event_id,
             executor_id=executor_id,
             draw_salt=settings.SECRET_KEY[:8],
-            executed_at=datetime.now(timezone('Asia/Seoul')),
+            executed_at=datetime.now(pytz.timezone('Asia/Seoul')),
             total_applicants=len(applicants),
             winner_ids=json.dumps(winner_ids),
             status=LotteryHistoryStatus.SUCCESS

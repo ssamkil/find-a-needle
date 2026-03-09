@@ -1,1 +1,2 @@
 from auto_draw import perform_draw
+from result import get_event_results
