@@ -1,5 +1,5 @@
+import pytz
 from datetime import datetime, timedelta, timezone
-from pytz import timezone
 from typing import Any, Union
 from jose import jwt
 from passlib.context import CryptContext
@@ -15,9 +15,9 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
     if expires_delta:
-        expire = datetime.now(timezone('Asia/Seoul')) + expires_delta
+        expire = datetime.now(pytz.timezone('Asia/Seoul')) + expires_delta
     else:
-        expire = datetime.now(timezone('Asia/Seoul')) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(pytz.timezone('Asia/Seoul')) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {"exp": expire, "sub": str(subject)}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

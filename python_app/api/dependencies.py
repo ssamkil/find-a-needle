@@ -8,7 +8,7 @@ from python_app.db.session import get_db
 from python_app.models import User, UserRole
 from python_app.schemas import TokenData
 
-oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 async def get_current_user(
         db: AsyncSession = Depends(get_db),
@@ -16,7 +16,7 @@ async def get_current_user(
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="인증 정보가 올바르지 않습니다",
+        detail="인증 정보가 올바르지 않습니다.",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -41,7 +41,7 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="비활성화된 계정입니다"
+            detail="비활성화된 계정입니다."
         )
 
     return user
@@ -52,6 +52,6 @@ async def get_current_admin(
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="관리자 권한이 필요합니다"
+            detail="관리자 권한이 필요합니다."
         )
     return current_user
