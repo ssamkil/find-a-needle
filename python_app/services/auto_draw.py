@@ -1,18 +1,25 @@
-import hashlib, json, pytz
-from datetime import datetime, timezone
+import hashlib, json, pytz, asyncio
+from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from python_app.models import Event, EventStatus, Winner, LotteryHistory, LotteryHistoryStatus
 from python_app.core import settings, rd
 
+def draw_logic(applicants, event_id, secret_key):
+    def generate_hash(user_id: str):
+        combined_str = f"{secret_key}{event_id}{user_id}"
+        return hashlib.sha256(combined_str.encode()).hexdigest()
+
+    hashed_applicants = [(uid, generate_hash(uid)) for uid in applicants]
+    hashed_applicants.sort(key=lambda x: x[1])
+    return hashed_applicants
 
 async def perform_draw(event_id: int, db, executor_id: int):
     lock_key = f"lock:event:{event_id}:draw"
-
     is_locked = await rd.set(lock_key, "processing", nx=True, ex=60)
 
     if not is_locked:
-        raise ValueError("해당 이벤트에 대한 추첨이 진행 중입니다.")
+        raise ValueError("이미 추첨이 진행 중입니다.")
 
     try:
         result = await db.execute(
@@ -25,19 +32,20 @@ async def perform_draw(event_id: int, db, executor_id: int):
 
         redis_key = f"event:{event_id}:applicants"
         applicants = []
-
         async for member in rd.sscan_iter(redis_key, count=1000):
-            applicants.append(member)
+            applicants.append(member.decode() if isinstance(member, bytes) else member)
 
         if not applicants:
             raise ValueError("응모자가 없습니다.")
 
-        def generate_hash(user_id: str):
-            combined_str = f"{settings.SECRET_KEY}{event_id}{user_id}"
-            return hashlib.sha256(combined_str.encode()).hexdigest()
-
-        hashed_applicants = [(uid, generate_hash(uid)) for uid in applicants]
-        hashed_applicants.sort(key=lambda x: x[1])
+        loop = asyncio.get_running_loop()
+        hashed_applicants = await loop.run_in_executor(
+            None,
+            draw_logic,
+            applicants,
+            event_id,
+            settings.SECRET_KEY
+        )
 
         draw_count = min(len(applicants), event.max_applicants)
         winner_ids = [item[0] for item in hashed_applicants[:draw_count]]
@@ -60,17 +68,9 @@ async def perform_draw(event_id: int, db, executor_id: int):
         ))
 
         event.status = EventStatus.COMPLETED
-
         await rd.delete(redis_key)
 
-        return {
-            "message": "추첨이 완료되었습니다.",
-            "total_applicants": len(applicants),
-            "winners_count": len(winner_ids)
-        }
-
-    except Exception as e:
-        raise e
+        return {"message": "추첨 완료", "winners_count": len(winner_ids)}
 
     finally:
         await rd.delete(lock_key)
